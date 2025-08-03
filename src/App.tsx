@@ -4,9 +4,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-// IMPORTAÇÕES QUE VOCÊ VAI ADICIONAR
-import PrivateRoute from "./components/PrivateRoute"; // O novo componente
-import AdminLoginPage from "./pages/AdminLoginPage"; // A página de login
+// CONTEXT DE AUTENTICAÇÃO
+import { AuthProvider } from "./contexts/AuthContext";
+
+// IMPORTAÇÕES EXISTENTES
+import PrivateRoute from "./components/PrivateRoute";
+import AdminLoginPage from "./pages/AdminLogin";
 import Index from "./pages/Index";
 import ClientePage from "./pages/ClientePage";
 import AdminPage from "./pages/AdminPage";
@@ -16,25 +19,27 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/cliente" element={<ClientePage />} />
-          
-          {/* ROTA PARA A PÁGINA DE LOGIN */}
-          <Route path="/login" element={<AdminLoginPage />} />
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/cliente" element={<ClientePage />} />
+            
+            {/* ROTA PARA A PÁGINA DE LOGIN */}
+            <Route path="/login" element={<AdminLoginPage />} />
 
-          {/* ROTA PROTEGIDA PARA O PAINEL ADMINISTRATIVO */}
-          <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
+            {/* ROTA PROTEGIDA PARA O PAINEL ADMINISTRATIVO */}
+            <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
 
-          {/* CATCH-ALL ROTA */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+            {/* CATCH-ALL ROTA */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

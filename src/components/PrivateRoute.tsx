@@ -1,29 +1,31 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient'; // Verifique o caminho correto para o seu cliente Supabase
-import { Navigate } from 'react-router-dom';
+import React from 'react'
+import { Navigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import { Loader2 } from 'lucide-react'
 
-const PrivateRoute = ({ children }) => {
-  const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState(null);
+interface PrivateRouteProps {
+  children: React.ReactNode
+}
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
+  const { user, loading } = useAuth()
 
   if (loading) {
-    return <div>Carregando...</div>; // Ou qualquer indicador de loading
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-yellow-900 to-gray-900">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-yellow-400" />
+          <p className="text-white font-medium">Verificando autenticação...</p>
+        </div>
+      </div>
+    )
   }
 
-  return session ? children : <Navigate to="/login" />;
-};
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
 
-export default PrivateRoute;
+  return <>{children}</>
+}
+
+export default PrivateRoute
