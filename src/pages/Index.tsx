@@ -81,7 +81,7 @@ const Index = () => {
                   <span>Dashboard e relatórios</span>
                 </div>
               </div>
-              <Link to="/admin">
+              <Link to="/login">
                 <Button variant="secondary" className="w-full">
                   Acessar Painel Administrativo
                 </Button>
