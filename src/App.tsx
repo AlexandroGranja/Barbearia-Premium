@@ -3,6 +3,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+// IMPORTAÇÕES QUE VOCÊ VAI ADICIONAR
+import PrivateRoute from "./components/PrivateRoute"; // O novo componente
+import AdminLoginPage from "./pages/AdminLoginPage"; // A página de login
 import Index from "./pages/Index";
 import ClientePage from "./pages/ClientePage";
 import AdminPage from "./pages/AdminPage";
@@ -19,8 +23,14 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/cliente" element={<ClientePage />} />
-          <Route path="/admin" element={<AdminPage />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          
+          {/* ROTA PARA A PÁGINA DE LOGIN */}
+          <Route path="/login" element={<AdminLoginPage />} />
+
+          {/* ROTA PROTEGIDA PARA O PAINEL ADMINISTRATIVO */}
+          <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
+
+          {/* CATCH-ALL ROTA */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
