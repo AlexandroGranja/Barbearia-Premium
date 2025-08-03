@@ -1,11 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-
-// CONTEXT DE AUTENTICAÇÃO
-import { AuthProvider } from "./contexts/AuthContext";
+import { Routes, Route } from "react-router-dom";
 
 // IMPORTAÇÕES
 import PrivateRoute from "./components/PrivateRoute";
@@ -15,9 +11,6 @@ import ClientePage from "./pages/ClientePage";
 import AdminPage from "./pages/AdminPage";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
-
-// Componente de Debug
 function DebugPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
@@ -68,33 +61,21 @@ function DebugPage() {
 }
 
 const App = () => {
-  console.log('🚀 App iniciando...')
-  
+  console.log('🚀 App iniciando...');
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/cliente" element={<ClientePage />} />
-              <Route path="/debug" element={<DebugPage />} />
-              
-              {/* ROTA PARA A PÁGINA DE LOGIN */}
-              <Route path="/login" element={<AdminLoginPage />} />
-
-              {/* ROTA PROTEGIDA PARA O PAINEL ADMINISTRATIVO */}
-              <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
-
-              {/* CATCH-ALL ROTA */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/cliente" element={<ClientePage />} />
+        <Route path="/debug" element={<DebugPage />} />
+        <Route path="/login" element={<AdminLoginPage />} />
+        <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </TooltipProvider>
   );
 };
 
