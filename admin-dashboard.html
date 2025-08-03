@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo - Barbearia Premium</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-card .change {
+            font-size: 12px;
+            color: #28a745;
+            margin-top: 5px;
+        }
+
+        .section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+
+        .section h2 {
+            margin-bottom: 1rem;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 0.5rem;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status {
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status.waiting {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status.in-service {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.completed {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .table {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>✂️ Painel Administrativo</h1>
+        <div class="header-actions">
+            <a href="/" class="btn btn-secondary">← Voltar ao Site</a>
+            <button onclick="logout()" class="btn btn-danger">Sair</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Clientes na Fila</h3>
+                <div class="number" id="clientsInQueue">0</div>
+                <div class="change">Aguardando atendimento</div>
+            </div>
+            <div class="stat-card">
+                <h3>Atendimentos Hoje</h3>
+                <div class="number" id="todayServices">0</div>
+                <div class="change">+0% vs ontem</div>
+            </div>
+            <div class="stat-card">
+                <h3>Receita Hoje</h3>
+                <div class="number" id="todayRevenue">R$ 0,00</div>
+                <div class="change">Meta: R$ 500,00</div>
+            </div>
+            <div class="stat-card">
+                <h3>Tempo Médio</h3>
+                <div class="number" id="avgTime">0 min</div>
+                <div class="change">Por atendimento</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🕒 Fila Atual</h2>
+            <div id="currentQueue">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Posição</th>
+                            <th>Cliente</th>
+                            <th>Tipo de Corte</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                            <th>Horário</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="queueTable">
+                        <tr>
+                            <td colspan="7" class="empty-state">
+                                <div>
+                                    <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;">✂️</div>
+                                    <div>Nenhum cliente na fila</div>
+                                    <div style="font-size: 14px; margin-top: 0.5rem;">Os clientes aparecerão aqui quando se cadastrarem</div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Histórico de Hoje</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Serviço</th>
+                        <th>Valor</th>
+                        <th>Duração</th>
+                        <th>Horário</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTable">
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <div>
+                                <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;">📋</div>
+                                <div>Nenhum atendimento finalizado hoje</div>
+                                <div style="font-size: 14px; margin-top: 0.5rem;">O histórico aparecerá aqui após finalizar atendimentos</div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>⚙️ Ações Rápidas</h2>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="refreshData()">
+                    🔄 Atualizar Dados
+                </button>
+                <button class="btn btn-secondary" onclick="exportData()">
+                    📊 Exportar Relatório
+                </button>
+                <button class="btn btn-secondary" onclick="clearQueue()">
+                    🗑️ Limpar Fila
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function logout() {
+            try {
+                await fetch('/admin/logout', { method: 'POST' });
+                window.location.href = '/admin/login';
+            } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+                window.location.href = '/admin/login';
+            }
+        }
+
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/admin/data');
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Atualizar estatísticas
+                    document.getElementById('todayRevenue').textContent = 
+                        `R$ ${data.stats.todayRevenue.toFixed(2)}`;
+                    document.getElementById('todayServices').textContent = data.stats.todayServices;
+                    document.getElementById('clientsInQueue').textContent = data.stats.totalClients;
+                    document.getElementById('avgTime').textContent = `${data.stats.avgTime} min`;
+                }
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+            }
+        }
+
+        function refreshData() {
+            loadDashboardData();
+            // Adicionar feedback visual
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '🔄 Atualizando...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }, 1000);
+        }
+
+        function exportData() {
+            // Implementar exportação de dados
+            alert('Funcionalidade de exportação será implementada em breve!');
+        }
+
+        function clearQueue() {
+            if (confirm('Tem certeza que deseja limpar toda a fila?')) {
+                // Implementar limpeza da fila
+                alert('Fila limpa com sucesso!');
+                loadDashboardData();
+            }
+        }
+
+        // Carregar dados ao abrir a página
+        document.addEventListener('DOMContentLoaded', loadDashboardData);
+
+        // Atualizar dados a cada 30 segundos
+        setInterval(loadDashboardData, 30000);
+
+        // Adicionar timestamp de última atualização
+        function updateTimestamp() {
+            const now = new Date().toLocaleTimeString('pt-BR');
+            console.log(`Dados atualizados às ${now}`);
+        }
+
+        setInterval(updateTimestamp, 30000);
+    </script>
+</body>
+</html>

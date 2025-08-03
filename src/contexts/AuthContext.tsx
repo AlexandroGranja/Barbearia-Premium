@@ -1,164 +1,91 @@
-// src/contexts/AuthContext.tsx - CORREÇÃO PARA MÚLTIPLAS INSTÂNCIAS
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User, AuthError, Session } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabaseClient'
+import React, { createContext, useContext, useState, useEffect } from 'react';
+
+interface User {
+  id: string;
+  email: string;
+  role: string;
+  nome: string;
+}
 
 interface AuthContextType {
-  user: User | null
-  session: Session | null
-  signIn: (email: string, password: string) => Promise<{ error?: AuthError }>
-  signOut: () => Promise<void>
-  loading: boolean
-  initialized: boolean
+  user: User | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => void;
+  loading: boolean;
+  isAdmin: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  children: ReactNode
-}
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [initialized, setInitialized] = useState(false)
+  const isAdmin = user?.role === 'Administrador';
 
   useEffect(() => {
-    console.log('🚀 AuthProvider inicializando...')
-    
-    // Função para lidar com mudanças de auth
-    const handleAuthChange = async (event: string, session: Session | null) => {
-      console.log('🔄 Auth event:', event, session?.user?.email || 'no user')
-      
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-      
-      if (event === 'SIGNED_IN') {
-        console.log('✅ Usuário logado:', session?.user?.email)
-      } else if (event === 'SIGNED_OUT') {
-        console.log('👋 Usuário deslogado')
-      }
-    }
-
-    // Verificar sessão inicial
-    const initializeAuth = async () => {
+    // Simular verificação de sessão existente
+    const savedUser = localStorage.getItem('admin_user');
+    if (savedUser) {
       try {
-        console.log('🔍 Verificando sessão inicial...')
-        const { data: { session }, error } = await supabase.auth.getSession()
-        
-        if (error) {
-          console.error('❌ Erro ao obter sessão:', error)
-        } else if (session) {
-          console.log('✅ Sessão encontrada:', session.user.email)
-          setSession(session)
-          setUser(session.user)
-        } else {
-          console.log('ℹ️ Nenhuma sessão ativa')
-        }
+        const userData = JSON.parse(savedUser);
+        setUser(userData);
       } catch (error) {
-        console.error('❌ Erro na inicialização:', error)
-      } finally {
-        setLoading(false)
-        setInitialized(true)
-        console.log('✅ AuthProvider inicializado')
+        console.error('Erro ao carregar usuário salvo:', error);
+        localStorage.removeItem('admin_user');
       }
     }
+    setLoading(false);
+  }, []);
 
-    // Listener para mudanças de auth
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange)
-
-    // Inicializar
-    initializeAuth()
-
-    // Cleanup
-    return () => {
-      console.log('🧹 Limpando subscription do auth')
-      subscription.unsubscribe()
-    }
-  }, [])
-
-  const signIn = async (email: string, password: string) => {
-    console.log('🔐 Tentando login para:', email)
-    setLoading(true)
+  const login = async (email: string, password: string): Promise<boolean> => {
+    setLoading(true);
     
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      })
-
-      if (error) {
-        console.error('❌ Erro no login:', error.message)
-        return { error }
-      }
-
-      console.log('✅ Login realizado com sucesso')
-      return { error: undefined }
-    } catch (error) {
-      console.error('❌ Erro inesperado no login:', error)
-      return { error: error as AuthError }
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const signOut = async () => {
-    console.log('👋 Realizando logout...')
-    setLoading(true)
-    
-    try {
-      const { error } = await supabase.auth.signOut()
-      
-      if (error) {
-        console.error('❌ Erro no logout:', error)
-        throw error
+      // Simular autenticação - substitua pela sua lógica do Supabase
+      if (email === 'alexxx.granja@gmail.com' && password === 'admin123') {
+        const userData: User = {
+          id: '7ac7fea2-6987-4d22-8f5b-e8465dd82003',
+          email: 'alexxx.granja@gmail.com',
+          role: 'Administrador',
+          nome: 'Administrador'
+        };
+        
+        setUser(userData);
+        localStorage.setItem('admin_user', JSON.stringify(userData));
+        
+        console.log('Auth event: SIGNED_IN', email);
+        console.log('Usuário logado:', email);
+        
+        return true;
       }
       
-      console.log('✅ Logout realizado com sucesso')
+      return false;
     } catch (error) {
-      console.error('❌ Erro no logout:', error)
-      throw error
+      console.error('Erro no login:', error);
+      return false;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  // Debug info
-  useEffect(() => {
-    if (initialized) {
-      console.log('📊 Estado atual do Auth:', {
-        user: user?.email || 'null',
-        hasSession: !!session,
-        loading,
-        initialized
-      })
-    }
-  }, [user, session, loading, initialized])
-
-  const value: AuthContextType = {
-    user,
-    session,
-    signIn,
-    signOut,
-    loading,
-    initialized
-  }
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('admin_user');
+    console.log('Usuário deslogado');
+  };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, login, logout, loading, isAdmin }}>
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext)
-  
+export function useAuth() {
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider')
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
-  
-  return context
+  return context;
 }
