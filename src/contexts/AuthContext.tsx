@@ -1,7 +1,7 @@
+// src/contexts/AuthContext.tsx - Versão simplificada
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import { useToast } from '@/hooks/use-toast'
 
 interface AuthContextType {
   user: User | null
@@ -25,13 +25,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
-  const { toast } = useToast()
 
   useEffect(() => {
+    console.log('🔄 Iniciando AuthProvider...')
+    
     // Verificar sessão atual
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('❌ Erro ao obter sessão:', error)
+      } else {
+        console.log('✅ Sessão obtida:', session?.user?.email || 'Nenhuma sessão')
+      }
+      
       setSession(session)
       setUser(session?.user ?? null)
+      setLoading(false)
+    }).catch((err) => {
+      console.error('❌ Erro crítico na sessão:', err)
       setLoading(false)
     })
 
@@ -39,6 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('🔄 Auth state changed:', _event, session?.user?.email)
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
@@ -48,33 +59,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    console.log('🔐 Tentando login com:', email)
     
-    if (error) {
-      toast({
-        title: "Erro no login",
-        description: "Email ou senha incorretos",
-        variant: "destructive",
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       })
-    } else {
-      toast({
-        title: "Login realizado com sucesso!",
-        description: "Bem-vindo ao painel administrativo",
-      })
+      
+      if (error) {
+        console.error('❌ Erro no login:', error.message)
+      } else {
+        console.log('✅ Login realizado com sucesso!')
+      }
+      
+      return { error }
+    } catch (err) {
+      console.error('❌ Erro crítico no login:', err)
+      return { error: err }
     }
-    
-    return { error }
   }
 
   const signOut = async () => {
+    console.log('🚪 Fazendo logout...')
     await supabase.auth.signOut()
-    toast({
-      title: "Logout realizado",
-      description: "Você foi desconectado com sucesso",
-    })
   }
 
   const value = {
@@ -83,6 +91,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     signIn,
     signOut,
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p>Carregando autenticação...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

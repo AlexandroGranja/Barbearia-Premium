@@ -1,100 +1,97 @@
+// src/pages/AdminLogin.tsx - Versão simplificada
 import React, { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Scissors, Loader2, Lock } from 'lucide-react'
 
 const AdminLogin: React.FC = () => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('admin@barbearia.com')
+  const [password, setPassword] = useState('123456789')
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { user, signIn } = useAuth()
 
   // Se já estiver logado, redirecionar para admin
   if (user) {
+    console.log('✅ Usuário já logado, redirecionando...')
     return <Navigate to="/admin" replace />
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError('')
 
-    await signIn(email, password)
+    console.log('🔐 Tentando fazer login...')
+    const { error } = await signIn(email, password)
+
+    if (error) {
+      setError(`Erro: ${error.message}`)
+      console.error('❌ Erro no login:', error)
+    } else {
+      console.log('✅ Login bem-sucedido!')
+    }
+    
     setLoading(false)
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-yellow-900 to-gray-900 p-4">
-      <Card className="w-full max-w-md shadow-2xl border-0">
-        <CardHeader className="text-center space-y-4">
-          <div className="mx-auto h-16 w-16 bg-yellow-400 rounded-full flex items-center justify-center">
-            <Scissors className="h-8 w-8 text-gray-900" />
-          </div>
-          <div>
-            <CardTitle className="text-2xl font-bold text-gray-900">
-              Barbearia Premium
-            </CardTitle>
-            <CardDescription className="text-yellow-600 font-medium">
-              Acesso Administrativo
-            </CardDescription>
-          </div>
-        </CardHeader>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+      <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Login Administrativo
+          </h1>
+          <p className="text-gray-600 mt-2">Barbearia Premium</p>
+        </div>
         
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Digite seu email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="focus:ring-yellow-500 focus:border-yellow-500"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium">
-                Senha
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Digite sua senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="focus:ring-yellow-500 focus:border-yellow-500"
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Senha
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
 
-            <Button 
-              type="submit" 
-              className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-medium h-11"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Entrando...
-                </>
-              ) : (
-                <>
-                  <Lock className="mr-2 h-4 w-4" />
-                  Entrar no Sistema
-                </>
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Entrando...' : 'Entrar'}
+          </button>
+        </form>
+
+        <div className="mt-6 p-4 bg-gray-50 rounded-md text-sm">
+          <h3 className="font-medium mb-2">Credenciais padrão:</h3>
+          <p>Email: admin@barbearia.com</p>
+          <p>Senha: 123456789</p>
+        </div>
+      </div>
     </div>
   )
 }
