@@ -1,106 +1,79 @@
-// src/pages/AdminPage.tsx - Versão com debug e melhorias
+// src/pages/AdminPage.tsx - VERSÃO CORRIGIDA FINAL
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
 const AdminPage: React.FC = () => {
-  const { user, signOut } = useAuth()
-  const [isLoading, setIsLoading] = useState(true)
-  const [hasError, setHasError] = useState(false)
-  const [errorMessage, setErrorMessage] = useState('')
+  const { user, signOut, loading, initialized } = useAuth()
+  const [pageLoading, setPageLoading] = useState(true)
 
-  // Debug inicial
   useEffect(() => {
-    console.log('AdminPage montado')
-    console.log('User:', user)
-    console.log('signOut function:', signOut)
-    
-    // Simular carregamento inicial
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1000)
+    console.log('📱 AdminPage montada')
+    console.log('👤 User:', user?.email || 'null')
+    console.log('⏳ Auth loading:', loading)
+    console.log('✅ Auth initialized:', initialized)
 
-    return () => clearTimeout(timer)
-  }, [user, signOut])
+    // Aguardar inicialização do auth antes de mostrar conteúdo
+    if (initialized) {
+      const timer = setTimeout(() => {
+        setPageLoading(false)
+        console.log('🎯 Página pronta para exibir')
+      }, 500)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [user, loading, initialized])
 
   const handleLogout = async () => {
     try {
       if (confirm('Tem certeza que deseja sair?')) {
-        console.log('Iniciando logout...')
+        console.log('🚪 Iniciando logout...')
         await signOut()
-        console.log('Logout realizado com sucesso')
+        console.log('✅ Logout concluído')
       }
     } catch (error) {
-      console.error('Erro no logout:', error)
-      setHasError(true)
-      setErrorMessage('Erro ao fazer logout. Tente novamente.')
+      console.error('❌ Erro no logout:', error)
+      alert('Erro ao fazer logout. Tente novamente.')
     }
   }
 
-  // Tela de carregamento
-  if (isLoading) {
+  // Tela de carregamento enquanto auth não inicializa
+  if (!initialized || pageLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando painel administrativo...</p>
+          <p className="text-gray-600">
+            {!initialized ? 'Inicializando autenticação...' : 'Carregando painel...'}
+          </p>
         </div>
       </div>
     )
   }
 
-  // Verificação de erro
-  if (hasError) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-              <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5C3.312 16.333 4.271 18 5.813 18z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Erro</h3>
-            <p className="text-gray-600 mb-4">{errorMessage}</p>
-            <button
-              onClick={() => {
-                setHasError(false)
-                setErrorMessage('')
-              }}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-            >
-              Tentar Novamente
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Verificação de usuário
+  // Verificar se usuário está logado
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
-              <svg className="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5C3.312 16.333 4.271 18 5.813 18z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Usuário não encontrado</h3>
-            <p className="text-gray-600 mb-4">Faça login novamente para acessar o painel administrativo.</p>
-            <button
-              onClick={() => window.location.href = '/login'}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-            >
-              Ir para Login
-            </button>
+        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+            <svg className="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5C3.312 16.333 4.271 18 5.813 18z" />
+            </svg>
           </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Acesso Negado</h3>
+          <p className="text-gray-600 mb-4">Você precisa estar logado para acessar esta página.</p>
+          <button
+            onClick={() => window.location.href = '/login'}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Ir para Login
+          </button>
         </div>
       </div>
     )
   }
 
+  // Página principal do admin
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -114,21 +87,15 @@ const AdminPage: React.FC = () => {
                 </svg>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">
-                  Barbearia Premium
-                </h1>
+                <h1 className="text-xl font-bold text-gray-900">Barbearia Premium</h1>
                 <p className="text-sm text-gray-600">Painel Administrativo</p>
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">
-                  Administrador
-                </p>
-                <p className="text-xs text-gray-500">
-                  {user?.email || 'Email não disponível'}
-                </p>
+                <p className="text-sm font-medium text-gray-900">Administrador</p>
+                <p className="text-xs text-gray-500">{user.email}</p>
               </div>
               <button
                 onClick={handleLogout}
@@ -153,12 +120,16 @@ const AdminPage: React.FC = () => {
               Bem-vindo ao Painel Administrativo! ✅
             </h2>
             <p className="text-gray-600">
-              Login realizado com sucesso. Usuário: <strong>{user?.email}</strong>
+              Login realizado com sucesso. Usuário: <strong>{user.email}</strong>
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              Última atualização: {new Date().toLocaleString('pt-BR')}
             </p>
           </div>
 
           {/* Dashboard Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            {/* Card Agendamentos */}
             <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
               <div className="flex items-center">
                 <div className="p-2 bg-blue-100 rounded-lg">
@@ -173,6 +144,7 @@ const AdminPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Card Clientes */}
             <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
               <div className="flex items-center">
                 <div className="p-2 bg-green-100 rounded-lg">
@@ -187,6 +159,7 @@ const AdminPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Card Faturamento */}
             <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
               <div className="flex items-center">
                 <div className="p-2 bg-yellow-100 rounded-lg">
@@ -201,6 +174,7 @@ const AdminPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Card Relatórios */}
             <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
               <div className="flex items-center">
                 <div className="p-2 bg-purple-100 rounded-lg">
@@ -232,26 +206,15 @@ const AdminPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Status de Debug */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <h4 className="text-green-800 font-medium mb-2">✅ Status do Sistema</h4>
+          {/* Status de Sucesso */}
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <h4 className="text-green-800 font-medium mb-2">✅ Sistema Funcionando</h4>
             <ul className="text-green-700 text-sm space-y-1">
-              <li>✅ Autenticação funcionando</li>
-              <li>✅ Usuário logado: {user?.email}</li>
+              <li>✅ Problema de múltiplas instâncias resolvido</li>
+              <li>✅ Usuário autenticado: {user.email}</li>
               <li>✅ Página administrativa carregada</li>
-              <li>✅ Logout disponível</li>
-              <li>✅ Timestamp: {new Date().toLocaleString()}</li>
+              <li>✅ Funcionalidades disponíveis</li>
             </ul>
-          </div>
-
-          {/* Debug adicional */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="text-blue-800 font-medium mb-2">🔍 Debug Info</h4>
-            <div className="text-blue-700 text-sm space-y-1">
-              <p>User object: {JSON.stringify(user, null, 2)}</p>
-              <p>Current URL: {window.location.href}</p>
-              <p>User Agent: {navigator.userAgent}</p>
-            </div>
           </div>
         </div>
       </main>

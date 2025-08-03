@@ -1,107 +1,149 @@
-// src/contexts/AuthContext.tsx - Versão simplificada
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { User, Session } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabase'
+// src/contexts/AuthContext.tsx - CORREÇÃO PARA MÚLTIPLAS INSTÂNCIAS
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { User, AuthError, Session } from '@supabase/supabase-js'
+import { supabase } from '../lib/supabaseClient'
 
 interface AuthContextType {
   user: User | null
   session: Session | null
-  loading: boolean
-  signIn: (email: string, password: string) => Promise<{ error: any }>
+  signIn: (email: string, password: string) => Promise<{ error?: AuthError }>
   signOut: () => Promise<void>
+  loading: boolean
+  initialized: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export const useAuth = () => {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
+interface AuthProviderProps {
+  children: ReactNode
 }
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
-    console.log('🔄 Iniciando AuthProvider...')
+    console.log('🚀 AuthProvider inicializando...')
     
-    // Verificar sessão atual
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.error('❌ Erro ao obter sessão:', error)
-      } else {
-        console.log('✅ Sessão obtida:', session?.user?.email || 'Nenhuma sessão')
-      }
+    // Função para lidar com mudanças de auth
+    const handleAuthChange = async (event: string, session: Session | null) => {
+      console.log('🔄 Auth event:', event, session?.user?.email || 'no user')
       
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
-    }).catch((err) => {
-      console.error('❌ Erro crítico na sessão:', err)
-      setLoading(false)
-    })
+      
+      if (event === 'SIGNED_IN') {
+        console.log('✅ Usuário logado:', session?.user?.email)
+      } else if (event === 'SIGNED_OUT') {
+        console.log('👋 Usuário deslogado')
+      }
+    }
 
-    // Escutar mudanças de autenticação
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('🔄 Auth state changed:', _event, session?.user?.email)
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    // Verificar sessão inicial
+    const initializeAuth = async () => {
+      try {
+        console.log('🔍 Verificando sessão inicial...')
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('❌ Erro ao obter sessão:', error)
+        } else if (session) {
+          console.log('✅ Sessão encontrada:', session.user.email)
+          setSession(session)
+          setUser(session.user)
+        } else {
+          console.log('ℹ️ Nenhuma sessão ativa')
+        }
+      } catch (error) {
+        console.error('❌ Erro na inicialização:', error)
+      } finally {
+        setLoading(false)
+        setInitialized(true)
+        console.log('✅ AuthProvider inicializado')
+      }
+    }
 
-    return () => subscription.unsubscribe()
+    // Listener para mudanças de auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange)
+
+    // Inicializar
+    initializeAuth()
+
+    // Cleanup
+    return () => {
+      console.log('🧹 Limpando subscription do auth')
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    console.log('🔐 Tentando login com:', email)
+    console.log('🔐 Tentando login para:', email)
+    setLoading(true)
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password,
+        password
       })
-      
+
       if (error) {
         console.error('❌ Erro no login:', error.message)
-      } else {
-        console.log('✅ Login realizado com sucesso!')
+        return { error }
       }
-      
-      return { error }
-    } catch (err) {
-      console.error('❌ Erro crítico no login:', err)
-      return { error: err }
+
+      console.log('✅ Login realizado com sucesso')
+      return { error: undefined }
+    } catch (error) {
+      console.error('❌ Erro inesperado no login:', error)
+      return { error: error as AuthError }
+    } finally {
+      setLoading(false)
     }
   }
 
   const signOut = async () => {
-    console.log('🚪 Fazendo logout...')
-    await supabase.auth.signOut()
+    console.log('👋 Realizando logout...')
+    setLoading(true)
+    
+    try {
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        console.error('❌ Erro no logout:', error)
+        throw error
+      }
+      
+      console.log('✅ Logout realizado com sucesso')
+    } catch (error) {
+      console.error('❌ Erro no logout:', error)
+      throw error
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const value = {
+  // Debug info
+  useEffect(() => {
+    if (initialized) {
+      console.log('📊 Estado atual do Auth:', {
+        user: user?.email || 'null',
+        hasSession: !!session,
+        loading,
+        initialized
+      })
+    }
+  }, [user, session, loading, initialized])
+
+  const value: AuthContextType = {
     user,
     session,
-    loading,
     signIn,
     signOut,
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p>Carregando autenticação...</p>
-        </div>
-      </div>
-    )
+    loading,
+    initialized
   }
 
   return (
@@ -109,4 +151,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </AuthContext.Provider>
   )
+}
+
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext)
+  
+  if (context === undefined) {
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider')
+  }
+  
+  return context
 }
