@@ -1,8 +1,14 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-// Certifique-se de que estas variáveis estão no seu arquivo .env
-// No Railway, elas já estão configuradas
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+let supabase: SupabaseClient;
+
+// Verificamos se já existe uma instância para evitar criar uma nova.
+// A verificação `typeof window !== 'undefined'` garante que isso rode apenas no lado do cliente.
+if (typeof window !== 'undefined' && !supabase) {
+  supabase = createClient(supabaseUrl, supabaseAnonKey)
+}
+
+export { supabase };
