@@ -1,4 +1,7 @@
+// src/contexts/AuthContext.tsx
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../supabase/supabaseClient'; // Importe a instância única do Supabase
 
 interface User {
   id: string;
@@ -24,43 +27,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAdmin = user?.role === 'Administrador';
 
   useEffect(() => {
-    // Simular verificação de sessão existente
-    const savedUser = localStorage.getItem('admin_user');
-    if (savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setLoading(false);
+      if (session) {
+        // Mapeie os dados do usuário do Supabase para a sua interface `User`
+        const userData: User = {
+          id: session.user.id,
+          email: session.user.email,
+          role: session.user.user_metadata.role || 'Usuário', // Exemplo: Pegando o role do metadata
+          nome: session.user.user_metadata.nome || 'Usuário' // Exemplo
+        };
         setUser(userData);
-      } catch (error) {
-        console.error('Erro ao carregar usuário salvo:', error);
-        localStorage.removeItem('admin_user');
+      } else {
+        setUser(null);
       }
-    }
-    setLoading(false);
+    });
+
+    // Limpe a subscription quando o componente for desmontado
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setLoading(true);
-    
     try {
-      // Simular autenticação - substitua pela sua lógica do Supabase
-      if (email === 'alexxx.granja@gmail.com' && password === 'admin123') {
-        const userData: User = {
-          id: '7ac7fea2-6987-4d22-8f5b-e8465dd82003',
-          email: 'alexxx.granja@gmail.com',
-          role: 'Administrador',
-          nome: 'Administrador'
-        };
-        
-        setUser(userData);
-        localStorage.setItem('admin_user', JSON.stringify(userData));
-        
-        console.log('Auth event: SIGNED_IN', email);
-        console.log('Usuário logado:', email);
-        
-        return true;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        console.error('Erro no login:', error.message);
+        return false;
       }
       
-      return false;
+      // Se o login foi bem-sucedido, o `onAuthStateChange` cuidará de atualizar o estado do usuário
+      return true;
     } catch (error) {
       console.error('Erro no login:', error);
       return false;
@@ -69,9 +69,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('admin_user');
     console.log('Usuário deslogado');
   };
 
